@@ -1,4 +1,4 @@
-# University of Toronto - Spatial Data Analysis of Malaria Prevalence in The Gambia
+# Spatial Data Analysis of Malaria Prevalence in The Gambia
 
 Welcome! This repository contains my Spatial Data Analysis Assignment I completed during my time at the University of Toronto. You can view each assignment in HTML format by clicking the links below.
 
