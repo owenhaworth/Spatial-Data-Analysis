@@ -4,7 +4,7 @@ Welcome! This repository contains my completed university assignments. You can v
 
 ## Assignments
 
-* [Assignment 1](https://owenhaworth.github.io/University-of-Toronto-St.-George-Statistics-Projects/STA465---Assignment--5-1.html)
+* [Assignment 1](https://owenhaworth.github.io/University-of-Toronto-St.-George-Statistics-Projects/STA465---Assignment--4.html)
 * [Assignment 2](https://yourusername.github.io/your-repo/assignment2.html)
 * [Assignment 3](https://yourusername.github.io/your-repo/assignment3.html)
 
