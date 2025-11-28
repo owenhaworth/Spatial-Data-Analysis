@@ -1,6 +1,6 @@
-# University of Toronto Assignments Portfolio
+# University of Toronto - Spatial Data Analysis of Malaria Prevalence in The Gambia
 
-Welcome! This repository contains my completed university assignments. You can view each assignment in HTML format by clicking the links below.
+Welcome! This repository contains my Spatial Data Analysis Assignment I completed during my time at the University of Toronto. You can view each assignment in HTML format by clicking the links below.
 
 ## About
 
@@ -12,7 +12,7 @@ Click the link below to open the HTML file via GitHub Pages. You do not need Git
 
 ## Assignment
 
-* [Assignment 1](https://owenhaworth.github.io/University-of-Toronto-St.-George-Statistics-Projects/STA465---Assignment--4.html)
+* [Spatial Data Analysis](https://owenhaworth.github.io/University-of-Toronto-St.-George-Statistics-Projects/Spatial-Data-Analysis.html)
 
 ## Overview
 
