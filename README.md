@@ -18,23 +18,25 @@ Click the link below to open the HTML file via GitHub Pages. You do not need Git
 
 This assignment explores spatial analysis of malaria prevalence in The Gambia using R and geostatistical methods. Key tasks include:
 
-* Loading and preprocessing the malaria dataset from the geoR R package, aggregating by location, and converting it into a spatial sf object.
+* Question 1.1: Load and preprocess the malaria dataset from the geoR R package, aggregate by location, convert to a spatial sf object, and create a two-panel plot of total cases and prevalence.
 
-* Mapping observed malaria prevalence and visualizing total cases across locations.
+* Question 1.2: Simulate data from the prior predictive distribution using a Matérn covariance matrix; create histograms of simulated prevalence for selected locations.
 
-* Simulating data from the prior predictive distribution using Matérn covariance and creating histograms of simulated prevalence for selected locations.
+* Question 1.3: Generate maps of four different prior predictive draws of prevalence in The Gambia.
 
-* Fitting three spatial models with INLA:
+* Question 1.4: Fit three spatial models with INLA:
 
-    1. Exponential covariance model
+        1. Exponential covariance model
 
-    2. Matérn model using SPDE2
+        2. Matérn model using SPDE2
 
-    3. Matérn model with penalized complexity priors
+        3.Matérn model with penalized complexity priors
 
-* Constructing meshes, prediction stacks, and generating maps of predicted prevalence, 95% credible intervals, and exceedance probabilities.
+    Construct meshes, prediction stacks, and prepare data for model fitting.
 
-* Organizing estimated parameters into tables and visualizing model outputs on maps for comparison.
+* Question 1.5: Create three maps per model showing predicted prevalence, lower 95% credible interval, and upper 95% credible interval.
+
+* Question 1.6: Calculate and map the probability that malaria prevalence exceeds 50% across The Gambia.
 
 This homework demonstrates the application of geospatial statistics, spatial modeling, and Bayesian inference in R, providing both numeric summaries and interactive HTML visualizations of the results.
 
