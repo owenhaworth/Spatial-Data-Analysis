@@ -1,0 +1,601 @@
+---
+title: 'STA465 - Assignment #4'
+author: "Owen Haworth"
+date: "18/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Question 1
+```{r, message = FALSE, warning = FALSE}
+# R packages:
+library(geoR)
+library(sf)
+library(tidyverse)
+library(sp)
+library(rgdal)
+library(tmap)
+library(raster)
+library(geodist)
+library(INLA)
+library(MASS)
+library(leaflet)
+library(viridis)
+```
+
+## Question 1.1
+```{r, message = FALSE}
+load("~/Hwk4Data_STA465.RData")
+
+gambia.sf
+
+st_crs(gambia.sf)
+
+tmap_mode("plot")
+tm_shape(gambia.sf) +
+  tm_dots(c("total", "prev"), title = c("Total", "Prevalence")) +
+  tm_facets(nrow = 2, ncol = 1, sync = FALSE)
+```
+
+The geometry type of The Gambia data set (gambia.sf) is a simple feature point.
+
+The coordinate reference system (CRS) of The Gambia data set (gambia.sf) is
+geographic (geographic coordinate system ("CRS: +proj=longlat +datum=WGS84"))
+with units in degrees for both longitude and latitude. Also, the CRS has a
+World Geodetic System 1984 ("WGS 84") datum, and a World Geodetic System 1984
+("WGS 84") ellipsoid. This CRS is called "World Geodetic System 1984"
+("WGS 84").
+
+## Question 1.2
+```{r, message = FALSE, warning = FALSE}
+set.seed(12)
+
+dist.matrix <- geodist(d[,c("long", "lat")], measure = "geodesic")
+
+N <- d$total
+
+beta0 <- list()
+beta1 <- list()
+for (i in 1:100) {
+  beta0[[i]] <- rnorm(n = 65, mean = 0, sd = 1)
+  beta1[[i]] <- rnorm(n = 65, mean = 0, sd = 1)
+  }
+
+phi <- c()
+k <- c()
+for (i in 1:100) {
+  phi[i] <- rgamma(n = 1, shape = 10, rate = 1)
+  k[i] <- rgamma(n = 1, shape = 1, scale = 1)
+  }
+
+cov.matrix <- list()
+for (i in 1:100) {
+  cov.matrix[[i]] <- matern(u = dist.matrix, phi = phi[i], kappa = k[i])
+  }
+
+spatial.re <- list()
+for (i in 1:100) {
+  spatial.re[[i]] <- mvrnorm(n = 1, mu = rep(0, 65), Sigma = cov.matrix[[i]])
+  }
+
+logit.P <- rep(list(1:65), 100)
+P <- rep(list(1:65), 100)
+for (i in 1:100) {
+  for (j in 1:65) {
+    logit.P[[i]][j] <- beta0[[i]][j] + (beta1[[i]][j] * gambia.sf$alt[j]) + spatial.re[[i]][j]
+    P[[i]][j] <- exp(logit.P[[i]][j]) / (1 + exp(logit.P[[i]][j]))
+    }
+  }
+
+y.sim <- rep(list(1:65), 100)
+for (i in 1:100) {
+  for (j in 1:65) {
+    y.sim[[i]][j] <- rbinom(n = 1, size = N[j], prob = P[[i]][j])
+    }
+  }
+
+# For Location 1:
+P.obs.1 <- gambia.sf$prev[1]
+
+P.location.1 <- c()
+for (i in 1:100) {
+  P.location.1 <- c(P.location.1, P[[i]][1])
+  }
+
+sim.data.1 <- data.frame(x = rep(gambia.sf$alt[1], 100), P = P.location.1, "Location Number" = rep(1, each = 100))
+
+ggplot(data = sim.data.1, aes(P)) +
+  geom_histogram(aes(P)) +
+  stat_bin(bins = 5, binwidth = 0.2) +
+  scale_x_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1)) +
+  geom_vline(aes(xintercept = P.obs.1), col = "red") +
+  xlab("Prevalence") + ylab("Frequency") +
+  ggtitle("Histogram of the Prior Predictive Draws of Prevalence for Location 1")
+
+# For Location 2:
+P.obs.2 <- gambia.sf$prev[2]
+
+P.location.2 <- c()
+for (i in 1:100) {
+  P.location.2 <- c(P.location.2, P[[i]][2])
+  }
+
+sim.data.2 <- data.frame(x = rep(gambia.sf$alt[2], 100), P = P.location.2, "Location Number" = rep(2, each = 100))
+
+ggplot(data = sim.data.2, aes(P)) +
+  geom_histogram(aes(P)) +
+  stat_bin(bins = 5, binwidth = 0.2) +
+  scale_x_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1)) +
+  geom_vline(aes(xintercept = P.obs.2), col = "red") +
+  xlab("Prevalence") + ylab("Frequency") +
+  ggtitle("Histogram of the Prior Predictive Draws of Prevalence for Location 2")
+
+# For Location 3:
+P.obs.3 <- gambia.sf$prev[3]
+
+P.location.3 <- c()
+for (i in 1:100) {
+  P.location.3 <- c(P.location.3, P[[i]][3])
+  }
+
+sim.data.3 <- data.frame(x = rep(gambia.sf$alt[3], 100), P = P.location.3, "Location Number" = rep(3, each = 100))
+
+ggplot(data = sim.data.3, aes(P)) +
+  geom_histogram(aes(P)) +
+  stat_bin(bins = 5, binwidth = 0.2) +
+  scale_x_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1)) +
+  geom_vline(aes(xintercept = P.obs.3), col = "red") +
+  xlab("Prevalence") + ylab("Frequency") +
+  ggtitle("Histogram of the Prior Predictive Draws of Prevalence for Location 3")
+
+# For Location 4:
+P.obs.4 <- gambia.sf$prev[4]
+
+P.location.4 <- c()
+for (i in 1:100) {
+  P.location.4 <- c(P.location.4, P[[i]][4])
+  }
+
+sim.data.4 <- data.frame(x = rep(gambia.sf$alt[4], 100), P = P.location.4, "Location Number" = rep(4, each = 100))
+
+ggplot(data = sim.data.4, aes(P)) +
+  geom_histogram(aes(P)) +
+  stat_bin(bins = 5, binwidth = 0.2) +
+  scale_x_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1)) +
+  geom_vline(aes(xintercept = P.obs.4), col = "red") +
+  xlab("Prevalence") + ylab("Frequency") +
+  ggtitle("Histogram of the Prior Predictive Draws of Prevalence for Location 4")
+
+# For Location 5:
+P.obs.5 <- gambia.sf$prev[5]
+
+P.location.5 <- c()
+for (i in 1:100) {
+  P.location.5 <- c(P.location.5, P[[i]][5])
+  }
+
+sim.data.5 <- data.frame(x = rep(gambia.sf$alt[5], 100), P = P.location.5, "Location Number" = rep(5, each = 100))
+
+ggplot(data = sim.data.5, aes(P)) +
+  geom_histogram(aes(P)) +
+  stat_bin(bins = 5, binwidth = 0.2) +
+  scale_x_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1)) +
+  geom_vline(aes(xintercept = P.obs.5), col = "red") +
+  xlab("Prevalence") + ylab("Frequency") +
+  ggtitle("Histogram of the Prior Predictive Draws of Prevalence for Location 5")
+
+# For Location 6:
+P.obs.6 <- gambia.sf$prev[6]
+
+P.location.6 <- c()
+for (i in 1:100) {
+  P.location.6 <- c(P.location.6, P[[i]][6])
+  }
+
+sim.data.6 <- data.frame(x = rep(gambia.sf$alt[6], 100), P = P.location.6, "Location Number" = rep(6, each = 100))
+
+ggplot(data = sim.data.6, aes(P)) +
+  geom_histogram(aes(P)) +
+  stat_bin(bins = 5, binwidth = 0.2) +
+  scale_x_continuous(breaks = c(0, 0.2, 0.4, 0.6, 0.8, 1)) +
+  geom_vline(aes(xintercept = P.obs.6), col = "red") +
+  xlab("Prevalence") + ylab("Frequency") +
+  ggtitle("Histogram of the Prior Predictive Draws of Prevalence for Location 6")
+```
+
+## Question 1.3
+```{r, message = FALSE}
+set.seed(12)
+
+# Map for Prior Predictive Draw #1 of Prevalence in The Gambia:
+gambia.sf$P.sim.1 <- P[[1]]
+
+tmap_mode("view")
+tm_basemap("Stamen.Terrain") +
+  tm_shape(gambia.sf) +
+  tm_dots(col = "P.sim.1", title = "Prevalence") +
+  tm_tiles("Stamen.TerrainLabels")
+
+# Map for Prior Predictive Draw #2 of Prevalence in The Gambia:
+gambia.sf$P.sim.2 <- P[[2]]
+
+tmap_mode("view")
+tm_basemap("Stamen.Terrain") +
+  tm_shape(gambia.sf) +
+  tm_dots(col = "P.sim.2", title = "Prevalence") +
+  tm_tiles("Stamen.TerrainLabels")
+
+# Map for Prior Predictive Draw #3 of Prevalence in The Gambia:
+gambia.sf$P.sim.3 <- P[[3]]
+
+tmap_mode("view")
+tm_basemap("Stamen.Terrain") +
+  tm_shape(gambia.sf) +
+  tm_dots(col = "P.sim.3", title = "Prevalence") +
+  tm_tiles("Stamen.TerrainLabels")
+
+# Map for Prior Predictive Draw #4 of Prevalence in The Gambia:
+gambia.sf$P.sim.4 <- P[[4]]
+
+tmap_mode("view")
+tm_basemap("Stamen.Terrain") +
+  tm_shape(gambia.sf) +
+  tm_dots(col = "P.sim.4", title = "Prevalence") +
+  tm_tiles("Stamen.TerrainLabels")
+```
+
+## Question 1.4
+#### Model #1: Exponential
+```{r, message = FALSE, warning = FALSE}
+set.seed(5001)
+
+# Mesh construction
+coo <- cbind(d$long, d$lat)
+mesh <- inla.mesh.2d(loc = coo, max.edge = c(0.1, 5), cutoff = 0.01)
+
+plot(mesh)
+
+points(coo, col = "red")
+
+#Exponential
+spde <- inla.spde2.matern(mesh = mesh, alpha = 3/2, constr = TRUE)
+
+indexs <- inla.spde.make.index("s", spde$n.spde)
+A <- inla.spde.make.A(mesh = mesh, loc = coo)
+
+## Prediction data
+r <- getData(name = "alt", country = "GMB", mask = TRUE)
+dp <- rasterToPoints(r)
+dim(dp)
+ra <- aggregate(r, fact = 5, fun = mean)
+dp <- rasterToPoints(ra)
+coop <- dp[, c("x", "y")]
+Ap <- inla.spde.make.A(mesh = mesh, loc = coop)
+
+# stack for estimation stk.e
+stk.e <- inla.stack(tag = "est", data = list(y = d$positive, numtrials = d$total),
+                    A = list(1, A), effects = list(data.frame(b0 = 1, altitude = d$alt), s = indexs))
+
+# stack for prediction stk.p
+stk.p <- inla.stack(tag = "pred", data = list(y = NA, numtrials = NA), A = list(1, Ap),
+                    effects = list(data.frame(b0 = 1, altitude = dp[, 3]), s = indexs))
+
+# stk.full has stk.e and stk.p
+stk.full <- inla.stack(stk.e, stk.p)
+
+formula <- y ~ 0 + b0 + altitude + f(s, model = spde)
+
+res1 <- inla(formula, family = "binomial", Ntrials = numtrials, control.family = list(link = "logit"),
+            data = inla.stack.data(stk.full),
+            control.predictor = list(compute = TRUE, link = 1, A = inla.stack.A(stk.full)))
+
+summary(res1)
+
+# Mean and 95% Credible Intervals Table of the Estimated Parameters:
+res1.ci.table <- matrix(c(-0.459, -1.310, 0.558, -0.002, -0.027, 0.024, -2.16,
+                         -2.52, -1.78, 2.35, 1.56, 3.12),
+                       nrow = 4, ncol = 3, byrow = TRUE)
+
+colnames(res1.ci.table) <- c("Mean", "Lower Bound", "Upper Bound")
+rownames(res1.ci.table) <- c("Beta 0", "Beta 1", "Theta 1", "Theta 2")
+names(dimnames(res1.ci.table)) <- list("", "Mean & 95% Credible Intervals for Model 1")
+
+res1.ci.table <- as.table(res1.ci.table)
+res1.ci.table
+```
+
+#### Model #2: Matérn using SPDE2
+```{r, message = FALSE, warning = FALSE}
+set.seed(5002)
+
+# Mesh construction
+coo <- cbind(d$long, d$lat)
+mesh <- inla.mesh.2d(loc = coo, max.edge = c(0.1, 5), cutoff = 0.01)
+
+plot(mesh)
+
+points(coo, col = "red")
+
+# SPDE2 Matérn
+spde <- inla.spde2.matern(mesh = mesh, alpha = 2, constr = TRUE)
+
+indexs <- inla.spde.make.index("s", spde$n.spde)
+A <- inla.spde.make.A(mesh = mesh, loc = coo)
+
+## Prediction data
+r <- getData(name = "alt", country = "GMB", mask = TRUE)
+dp <- rasterToPoints(r)
+dim(dp)
+ra <- aggregate(r, fact = 5, fun = mean)
+dp <- rasterToPoints(ra)
+coop <- dp[, c("x", "y")]
+Ap <- inla.spde.make.A(mesh = mesh, loc = coop)
+
+# stack for estimation stk.e
+stk.e <- inla.stack(tag = "est", data = list(y = d$positive, numtrials = d$total),
+                    A = list(1, A), effects = list(data.frame(b0 = 1, altitude = d$alt), s = indexs))
+
+# stack for prediction stk.p
+stk.p <- inla.stack(tag = "pred", data = list(y = NA, numtrials = NA), A = list(1, Ap),
+                    effects = list(data.frame(b0 = 1, altitude = dp[, 3]), s = indexs))
+
+# stk.full has stk.e and stk.p
+stk.full <- inla.stack(stk.e, stk.p)
+
+formula <- y ~ 0 + b0 + altitude + f(s, model = spde)
+
+res2 <- inla(formula, family = "binomial", Ntrials = numtrials, control.family = list(link = "logit"),
+            data = inla.stack.data(stk.full),
+            control.predictor = list(compute = TRUE, link = 1, A = inla.stack.A(stk.full)))
+
+summary(res2)
+
+# Mean and 95% Credible Intervals Table of the Estimated Parameters:
+res2.ci.table <- matrix(c(-0.322, -1.223, 0.837, -0.005, -0.030, 0.021, -4.06,
+                         -4.64, -3.47, 2.72, 1.95, 3.47),
+                       nrow = 4, ncol = 3, byrow = TRUE)
+
+colnames(res2.ci.table) <- c("Mean", "Lower Bound", "Upper Bound")
+rownames(res2.ci.table) <- c("Beta 0", "Beta 1", "Theta 1", "Theta 2")
+names(dimnames(res2.ci.table)) <- list("", "Mean & 95% Credible Intervals for Model 2")
+
+res2.ci.table <- as.table(res2.ci.table)
+res2.ci.table
+```
+
+#### Model #3: Matérn with Penalized Complexity Priors
+```{r, message = FALSE, warning = FALSE}
+set.seed(5003)
+
+# Mesh construction
+coo <- cbind(d$long, d$lat)
+mesh <- inla.mesh.2d(loc = coo, max.edge = c(0.1, 5), cutoff = 0.01)
+
+plot(mesh)
+
+points(coo, col = "red")
+
+# SPDE2 Matérn with penalized complexity priors
+spde <- inla.spde2.pcmatern(mesh = mesh, alpha = 2, constr = TRUE, prior.range = c(10, 0.9), prior.sigma = c(1, 0.01))
+
+indexs <- inla.spde.make.index("s", spde$n.spde)
+A <- inla.spde.make.A(mesh = mesh, loc = coo)
+
+## Prediction data
+r <- getData(name = "alt", country = "GMB", mask = TRUE)
+dp <- rasterToPoints(r)
+dim(dp)
+ra <- aggregate(r, fact = 5, fun = mean)
+dp <- rasterToPoints(ra)
+coop <- dp[, c("x", "y")]
+Ap <- inla.spde.make.A(mesh = mesh, loc = coop)
+
+# stack for estimation stk.e
+stk.e <- inla.stack(tag = "est", data = list(y = d$positive, numtrials = d$total),
+                    A = list(1, A), effects = list(data.frame(b0 = 1, altitude = d$alt), s = indexs))
+
+# stack for prediction stk.p
+stk.p <- inla.stack(tag = "pred", data = list(y = NA, numtrials = NA), A = list(1, Ap),
+                    effects = list(data.frame(b0 = 1, altitude = dp[, 3]), s = indexs))
+
+# stk.full has stk.e and stk.p
+stk.full <- inla.stack(stk.e, stk.p)
+
+formula <- y ~ 0 + b0 + altitude + f(s, model = spde)
+
+res3 <- inla(formula, family = "binomial", Ntrials = numtrials, control.family = list(link = "logit"),
+            data = inla.stack.data(stk.full),
+            control.predictor = list(compute = TRUE, link = 1, A = inla.stack.A(stk.full)))
+
+summary(res3)
+
+# Mean and 95% Credible Intervals Table of the Estimated Parameters:
+res3.ci.table <- matrix(c(-0.228, -1.073, 0.754, -0.008, -0.028, 0.013, 0.267,
+                         0.146, 0.464, 1.121, 0.786, 1.567),
+                       nrow = 4, ncol = 3, byrow = TRUE)
+
+colnames(res3.ci.table) <- c("Mean", "Lower Bound", "Upper Bound")
+rownames(res3.ci.table) <- c("Beta 0", "Beta 1", "Range", "Sigma")
+names(dimnames(res3.ci.table)) <- list("", "Mean & 95% Credible Intervals for Model 3")
+
+res3.ci.table <- as.table(res3.ci.table)
+res3.ci.table
+```
+
+## Question 1.5
+#### Model #1: Exponential
+```{r, message = FALSE, warning = FALSE}
+
+index <- inla.stack.index(stack = stk.full, tag = "pred")$data
+
+palette <- colorNumeric("viridis", c(0, 1), na.color = "transparent")
+
+# Map 1: Predicted Prevalence of Malaria across The Gambia
+y.predict.M1 <- res1$summary.fitted.values[index, "mean"]
+
+r.predict.M1 <- rasterize(x = coop, y = ra, field = y.predict.M1, fun = mean)
+
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addRasterImage(r.predict.M1, colors = palette, opacity = 0.5) %>%
+  addLegend("bottomright", pal = palette, values = values(r.predict.M1), title = "Prevalence") %>%
+  addScaleBar(position = c("bottomleft"))
+
+# Map 2: The Lower Limit of the 95% Credible Interval for Predicted Prevalence
+y.lowerlim.M1 <- res1$summary.fitted.values[index, "0.025quant"]
+
+r.lowerlim.M1 <- rasterize(x = coop, y = ra, field = y.lowerlim.M1, fun = mean)
+
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addRasterImage(r.lowerlim.M1, colors = palette, opacity = 0.5) %>%
+  addLegend("bottomright", pal = palette, values = values(r.lowerlim.M1), title = "Lower Limit") %>%
+  addScaleBar(position = c("bottomleft"))
+
+# Map 3: The Upper Limit of the 95% Credible Interval for Predicted Prevalence
+y.upperlim.M1 <- res1$summary.fitted.values[index, "0.975quant"]
+
+r.upperlim.M1 <- rasterize(x = coop, y = ra, field = y.upperlim.M1, fun = mean)
+
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addRasterImage(r.upperlim.M1, colors = palette, opacity = 0.5) %>%
+  addLegend("bottomright", pal = palette, values = values(r.upperlim.M1), title = "Upper Limit") %>%
+  addScaleBar(position = c("bottomleft"))
+```
+
+#### Model #2: Matérn using SPDE2
+```{r, message = FALSE, warning = FALSE}
+# Map 1: Predicted Prevalence of Malaria across The Gambia
+y.predict.M2 <- res2$summary.fitted.values[index, "mean"]
+
+r.predict.M2 <- rasterize(x = coop, y = ra, field = y.predict.M2, fun = mean)
+
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addRasterImage(r.predict.M2, colors = palette, opacity = 0.5) %>%
+  addLegend("bottomright", pal = palette, values = values(r.predict.M2), title = "Prevalence") %>%
+  addScaleBar(position = c("bottomleft"))
+
+# Map 2: The Lower Limit of the 95% Credible Interval for Predicted Prevalence
+y.lowerlim.M2 <- res2$summary.fitted.values[index, "0.025quant"]
+
+r.lowerlim.M2 <- rasterize(x = coop, y = ra, field = y.lowerlim.M2, fun = mean)
+
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addRasterImage(r.lowerlim.M2, colors = palette, opacity = 0.5) %>%
+  addLegend("bottomright", pal = palette, values = values(r.lowerlim.M2), title = "Lower Limit") %>%
+  addScaleBar(position = c("bottomleft"))
+
+# Map 3: The Upper Limit of the 95% Credible Interval for Predicted Prevalence
+y.upperlim.M2 <- res2$summary.fitted.values[index, "0.975quant"]
+
+r.upperlim.M2 <- rasterize(x = coop, y = ra, field = y.upperlim.M2, fun = mean)
+
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addRasterImage(r.upperlim.M2, colors = palette, opacity = 0.5) %>%
+  addLegend("bottomright", pal = palette, values = values(r.upperlim.M2), title = "Upper Limit") %>%
+  addScaleBar(position = c("bottomleft"))
+```
+
+#### Model #3: Matérn with Penalized Complexity Priors
+```{r, message = FALSE, warning = FALSE}
+# Map 1: Predicted Prevalence of Malaria across The Gambia
+y.predict.M3 <- res3$summary.fitted.values[index, "mean"]
+
+r.predict.M3 <- rasterize(x = coop, y = ra, field = y.predict.M3, fun = mean)
+
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addRasterImage(r.predict.M3, colors = palette, opacity = 0.5) %>%
+  addLegend("bottomright", pal = palette, values = values(r.predict.M3), title = "Prevalence") %>%
+  addScaleBar(position = c("bottomleft"))
+
+# Map 2: The Lower Limit of the 95% Credible Interval for Predicted Prevalence
+y.lowerlim.M3 <- res3$summary.fitted.values[index, "0.025quant"]
+
+r.lowerlim.M3 <- rasterize(x = coop, y = ra, field = y.lowerlim.M3, fun = mean)
+
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addRasterImage(r.lowerlim.M3, colors = palette, opacity = 0.5) %>%
+  addLegend("bottomright", pal = palette, values = values(r.lowerlim.M3), title = "Lower Limit") %>%
+  addScaleBar(position = c("bottomleft"))
+
+# Map 3: The Upper Limit of the 95% Credible Interval for Predicted Prevalence
+y.upperlim.M3 <- res3$summary.fitted.values[index, "0.975quant"]
+
+r.upperlim.M3 <- rasterize(x = coop, y = ra, field = y.upperlim.M3, fun = mean)
+
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addRasterImage(r.upperlim.M3, colors = palette, opacity = 0.5) %>%
+  addLegend("bottomright", pal = palette, values = values(r.upperlim.M3), title = "Upper Limit") %>%
+  addScaleBar(position = c("bottomleft"))
+```
+
+## Question 1.6
+#### Model #1: Exponential
+```{r, message = FALSE, warning = FALSE}
+# Probability that Malaria Prevalence is > 50% across The Gambia:
+post.marginals.M1 <- res1$marginals.fitted.values[index]
+
+prev.prob.M1 <- sapply(post.marginals.M1,
+                       FUN = function(marginals){1 - inla.pmarginal(q = 0.50, marginal = marginals)})
+
+head(prev.prob.M1, 100)
+
+# Map of the Exceedence Probabilities:
+r.prev.prob.M1 <- rasterize(x = coop, y = ra, field = prev.prob.M1, fun = mean)
+
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addRasterImage(r.prev.prob.M1, colors = palette, opacity = 0.5) %>%
+  addLegend("bottomright", pal = palette, values = values(r.prev.prob.M1), title = "P(p > 0.5)") %>%
+  addScaleBar(position = c("bottomleft"))
+```
+
+#### Model #2: Matérn using SPDE2
+```{r, message = FALSE, warning = FALSE}
+# Probability that Malaria Prevalence is > 50% across The Gambia:
+post.marginals.M2 <- res2$marginals.fitted.values[index]
+
+prev.prob.M2 <- sapply(post.marginals.M2,
+                       FUN = function(marginals){1 - inla.pmarginal(q = 0.50, marginal = marginals)})
+
+head(prev.prob.M2, 100)
+
+# Map of the Exceedence Probabilities:
+r.prev.prob.M2 <- rasterize(x = coop, y = ra, field = prev.prob.M2, fun = mean)
+
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addRasterImage(r.prev.prob.M2, colors = palette, opacity = 0.5) %>%
+  addLegend("bottomright", pal = palette, values = values(r.prev.prob.M2), title = "P(p > 0.5)") %>%
+  addScaleBar(position = c("bottomleft"))
+```
+
+#### Model #3: Matérn with Penalized Complexity Priors
+```{r, message = FALSE, warning = FALSE}
+# Probability that Malaria Prevalence is > 50% across The Gambia:
+post.marginals.M3 <- res3$marginals.fitted.values[index]
+
+prev.prob.M3 <- sapply(post.marginals.M3,
+                       FUN = function(marginals){1 - inla.pmarginal(q = 0.50, marginal = marginals)})
+
+head(prev.prob.M3, 100)
+
+# Map of the Exceedence Probabilities:
+r.prev.prob.M3 <- rasterize(x = coop, y = ra, field = prev.prob.M3, fun = mean)
+
+leaflet() %>%
+  addProviderTiles(providers$CartoDB.Positron) %>%
+  addRasterImage(r.prev.prob.M3, colors = palette, opacity = 0.5) %>%
+  addLegend("bottomright", pal = palette, values = values(r.prev.prob.M3), title = "P(p > 0.5)") %>%
+  addScaleBar(position = c("bottomleft"))
+```
